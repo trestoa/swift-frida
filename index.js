@@ -18,7 +18,8 @@ Swift = module.exports = {
         try {
             runtime.api;
             return true;
-        } catch(_) {
+        } catch(err) {
+            console.error('Error initializing swift-frida: ' + err);
         }
         return false;
     },

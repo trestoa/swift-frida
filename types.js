@@ -447,10 +447,14 @@ function Type(nominalType, canonicalType, name, accessFunction) {
             case "Swift.String":
                 this.fromJS = function (address, value) {
                     // TODO: fromJS needs a parameter telling it whether it is initializing or assigning
+                    // TODO [Markus]: Fix this function
+                    /*
                     canonicalType.valueWitnessTable.destroy(address, canonicalType._ptr);
                     let cStr = Memory.allocUtf8String(value);
                     runtime.api.swift_stringFromUTF8InRawMemory(address, cStr, value.length);
                     return true;
+                     */
+                    throw new Error('Not implemented!');
                 };
                 break;
             case "Swift.Bool":

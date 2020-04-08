@@ -103,7 +103,7 @@ function swiftToString(obj) {
     // metadata to find this offset
     let str = Memory.readUtf8String(array.add(8 + 3 * Process.pointerSize));
 
-    api.swift_unknownRelease(Memory.readPointer(stringResult.add(2*Process.pointerSize)));
+    api.swift_unknownObjectRelease(Memory.readPointer(stringResult.add(2*Process.pointerSize)));
     api.swift_bridgeObjectRelease(array);
 
     return str;

@@ -28,6 +28,10 @@
       ]
     ]
   },
+  "scripts": {
+    "build": "frida-compile loader.js -o build/_swift-frida.js",
+    "watch": "frida-compile loader.js -o build/_swift-frida.js -w"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/maltek/swift-frida.git"

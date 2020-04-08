@@ -33,8 +33,8 @@ module.exports = {
             {
                 module: "libswiftFoundation.dylib",
                 functions: {
-                    "_T0SS10FoundationE8EncodingV4utf8ACfau": ['pointer', []],
-                    "_T0s14StringProtocolP10FoundationsAARzSS5IndexVADRtzlE01cA0Says4Int8VGSgSSACE8EncodingV5using_tF": ['pointer', ['pointer', 'pointer', 'pointer']],
+                    "$sSS10FoundationE8EncodingV4utf8ACvgZ": ['pointer', []],
+                    "$sSy10FoundationE7cString5usingSays4Int8VGSgSSAAE8EncodingV_tF": ['pointer', ['pointer', 'pointer', 'pointer']],
                 }
             },
             {
@@ -62,8 +62,7 @@ module.exports = {
                 functions: {
                     "swift_demangle": ['pointer', ['pointer', size_t, 'pointer', 'pointer', 'int32']],
 
-                    'swift_unknownRetain': ['void', ['pointer']],
-                    'swift_unknownRelease': ['void', ['pointer']],
+                    'swift_unknownObjectRelease': ['void', ['pointer']],
                     'swift_bridgeObjectRelease': ['void', ['pointer']],
                     'swift_weakLoadStrong': ['pointer', ['pointer']],
                     'swift_weakAssign': ['void', ['pointer', 'pointer']],
@@ -75,7 +74,8 @@ module.exports = {
                     'swift_allocBox': [['pointer', 'pointer'], ['pointer']],
                     //'swift_deallocBox': ['void', ['pointer']],
                     'swift_projectBox': ['pointer', ['pointer']],
-                    'swift_stringFromUTF8InRawMemory': ['void', ['pointer', 'pointer', size_t]],
+                    // TODO [Markus]: fix this
+                    //'swift_stringFromUTF8InRawMemory': ['void', ['pointer', 'pointer', size_t]],
 
                     "swift_getTupleTypeMetadata": ['pointer', [size_t, 'pointer', 'pointer', 'pointer']],
                     "swift_getExistentialMetatypeMetadata": ['pointer', ['pointer']],
@@ -86,7 +86,7 @@ module.exports = {
                     "swift_getForeignTypeMetadata": ['pointer', ['pointer']],
                     "swift_getMetatypeMetadata": ['pointer', ['pointer']],
 
-                    "swift_getEnumCaseSinglePayload": ['int',  ['pointer', 'pointer', 'uint']],
+                    //"swift_getEnumCaseSinglePayload": ['int',  ['pointer', 'pointer', 'uint']],
                     "swift_getEnumCaseMultiPayload": ['uint',  ['pointer', 'pointer']],
 
                     'swift_conformsToProtocol': ['pointer', ['pointer', 'pointer']],
@@ -119,6 +119,7 @@ module.exports = {
 
             Object.keys(functions)
             .forEach(function (name) {
+                console.log('Initializing low level API function ' + name);
                 const exp = exportByName[name];
                 if (exp !== undefined && exp.type === 'function') {
                     const signature = functions[name];

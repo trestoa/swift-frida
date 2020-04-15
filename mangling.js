@@ -3,7 +3,7 @@
 /* jshint esnext: true, evil: true */
 
 module.exports = {
-    MANGLING_PREFIX: "_T", // 'old' mangling -- Swift HEAD has switched to using "_S"
+    MANGLING_PREFIX: "$s", // 'old' mangling -- Swift HEAD has switched to using "_S"
 
     isSwiftName(symbol) {
         let name = symbol.name || symbol;

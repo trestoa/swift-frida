@@ -624,7 +624,7 @@ function findAllTypes(library) {
     let sizeAlloc = Memory.alloc(8);
     const __TEXT = Memory.allocUtf8String("__TEXT");
 
-    const sectionNames = [Memory.allocUtf8String("__swift2_types"), Memory.allocUtf8String("__swift2_proto")];
+    const sectionNames = [Memory.allocUtf8String("__swift_types"), Memory.allocUtf8String("__swift_proto")];
     const recordSizes = [8, 16];
 
     function getTypePrio(t) {
@@ -699,15 +699,19 @@ function findAllTypes(library) {
         const NOMINAL_PREFIX = "nominal type descriptor for ";
         for (let exp of Module.enumerateExportsSync(mod.name)) {
             if (mangling.isSwiftName(exp.name)) {
+                //console.log('mangled: ' + exp.name);
                 let demangled = mangling.demangle(exp.name);
+                //console.log('unmangled: ' + demangled);
+                let name = demangled.substr(METADATA_PREFIX.length);
+                //console.log(name);
+                // TODO [Markus]: fix this
                 if (demangled.startsWith(METADATA_PREFIX)) {
-                    let name = demangled.substr(METADATA_PREFIX.length);
 
                     // first try to get the canonical type descriptor through the runtime API
                     // (this only works for class types)
-                    let nameCstr = Memory.allocUtf8String(name);
-                    let canon = runtime.api.swift_getTypeByName(nameCstr, strlen(nameCstr));
-                    if (canon.isNull()) {
+                    //let nameCstr = Memory.allocUtf8String(name);
+                    //let canon = runtime.api.swift_getTypeByName(nameCstr, strlen(nameCstr));
+                    if (false) {//(canon.isNull()) {
                         // type metadata sometimes can have members at negative indices, so we need to
                         // iterate until we find something that looks like the beginning of a Metadata object
                         // (Sadly, that doesn't work for class metadata with ISA pointers, but it should be no
@@ -720,14 +724,26 @@ function findAllTypes(library) {
                             }
                         }
                     }
-                    if (!canon.isNull())
-                        addType(new Type(null, new metadata.TargetMetadata(canon), name));
+                    const val = Memory.readPointer(exp.address);
+                    let [pointer, len] = runtime.api.swift_getTypeName(exp.address, 1);
+                    try {
+                        const str = Memory.readUtf8String(pointer, len.toInt32());
+
+                        console.log(str);
+                        console.log(val.toString());
+                    } catch (_) {
+                    }
+
+                    //if (!canon.isNull())
+                        addType(new Type(null, new metadata.TargetMetadata(exp.address), name));
+
+
                 } else if (demangled.startsWith(NOMINAL_PREFIX)) {
                     let name = demangled.substr(NOMINAL_PREFIX.length);
-                    addType(new Type(new metadata.TargetNominalTypeDescriptor(exp.address), null, name));
+                    // addType(new Type(new metadata.TargetNominalTypeDescriptor(exp.address), null, name));
                 } else if (demangled.startsWith(METADATA_ACCESSOR_PREFIX)) {
                     let name = demangled.substr(METADATA_ACCESSOR_PREFIX.length);
-                    addType(new Type(null, null, name, exp.address));
+                    //addType(new Type(null, null, name, exp.address));
                 }
             }
         }
@@ -749,7 +765,7 @@ function findAllTypes(library) {
         typesByName.set("Swift.AnyObject.Type", AnyClass);
         typesByName.set("Swift.AnyClass", AnyClass);
     }
-    typesByName.set("()", makeTupleType([], []));
+    //typesByName.set("()", makeTupleType([], []));
     typesByName.set("Void", typesByName.get("()"));
 
     while (newTypes.length) {
@@ -795,8 +811,9 @@ function makeTupleType(labels, innerTypes) {
     }
     let valueWitnesses = ptr(0);
     let pointer = runtime.api.swift_getTupleTypeMetadata(innerTypes.length, elements, labelsStr, valueWitnesses);
+    console.log(pointer);
     let canonical = new metadata.TargetMetadata(pointer);
-
+    console.log(canonical);
     if (canonical.labels.toString === labelsStr.toString())
         _leakedMemory.push(labelsStr); // if the tuple type is new, we must not ever dealllocate this string
 

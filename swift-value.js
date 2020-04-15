@@ -3,110 +3,115 @@ const types = require('./types');
 const {convention: CC, makeCallTrampoline, checkTrampolineError, convertToCParams} = require('./calling-convention');
 
 function swiftToString(obj) {
+    // TODO [Markus]: fix this
+    // NOTE: I guess it makes more sense to compile and disassemble the snippet again and redo this function rather
+    // than updating the JS code itself for javascript.
+
     const { api } = require('./runtime-api');
+    throw new Error('Not implemented');
 
-    let type = obj.$type;
-    let pointer = obj.$pointer;
-    /*
-     * built by disassembling the code for this snippet:
-     *
-        var str = String()
-        dump(x, to: &str)
-        let arr : [CChar] = str.cString(using: String.Encoding.utf8)!
-        let ptr = UnsafePointer<CChar>(arr)
-        strlen(ptr)
-     */
-    function __swift_destroy_boxed_opaque_existential_0(pointer) {
-        let opaque = new metadata.OpaqueExistentialContainer(pointer);
-        let type = opaque.type;
-        let vwt = opaque.type.valueWitnessTable;
-        if (vwt.flags.IsNonInline) {
-            let _swift_release_ = new NativeFunction(Memory.readPointer(api._swift_release), 'void', ['pointer']);
-            _swift_release_(opaque.fixedSizeBuffer0);
-        } else {
-            vwt.destroy(pointer, type._ptr);
-        }
-    }
-
-    let nomSwiftString = new metadata.TargetNominalTypeDescriptor(api._T0SSMn);
-    let SwiftString = new types.Type(nomSwiftString, null, "Swift.String");
-    if (!SwiftString.canonicalType)
-        SwiftString = SwiftString.withGenericParams();
-
-    let dynamicType;
-
-    let copy = Memory.alloc(4 * Process.pointerSize);
-    let copyFn;
-    let vwt = type.canonicalType.valueWitnessTable;
-    if (type.kind === "Existential" && type.canonicalType.getRepresentation() === "Opaque") {
-        dynamicType = api.swift_getDynamicType(pointer, type.canonicalType._ptr, 1);
-        copyFn = vwt.initializeBufferWithCopyOfBuffer;
-    } else {
-        dynamicType = type.canonicalType._ptr;
-        copyFn = vwt.initializeBufferWithCopy;
-    }
-    copyFn.call(vwt, copy, pointer, dynamicType);
-    Memory.writePointer(copy.add(3 * Process.pointerSize), dynamicType);
-
-    let stringResult = Memory.alloc(Process.pointerSize * 3);
-    Memory.writePointer(stringResult, api._T0s19_emptyStringStorages6UInt32Vv);
-    Memory.writePointer(stringResult.add(Process.pointerSize), ptr(0));
-    Memory.writePointer(stringResult.add(2*Process.pointerSize), ptr(0));
-
-    let threadId = Process.getCurrentThreadId();
-
-    let textOutputStreamWitnessTableForString = api._T0SSs16TextOutputStreamsWP;
-    let Any = api.swift_getExistentialTypeMetadata(metadata.ProtocolClassConstraint.Any, ptr(0), 0, ptr(0));
-
-    let dump = api._T0s4dumpxx_q_z2toSSSg4nameSi6indentSi8maxDepthSi0E5Itemsts16TextOutputStreamR_r0_lF;
-
-    const LONG_MAX = ptr(0).not().shr(1);
-
-    let returnAlloc = Memory.alloc(4 * Process.pointerSize);
-    // TODO: default arguments should in theory be retrieved via generator functions
-    let params = [
-        /*value*/ copy,
-        /*to*/ stringResult,
-        /*name*/ ptr(0), ptr(0), ptr(0), 1, // nil
-        /*indent*/ ptr(0),
-        /*maxDepth*/ LONG_MAX,
-        /*maxItems*/ LONG_MAX,
-        /*static type of `value`*/ Any,
-        /*static type of `to`*/ SwiftString.canonicalType._ptr,
-        /*how to use `to` as a TextOutputStream*/ textOutputStreamWitnessTableForString
-    ];
-    let trampoline;
-    if (CC.indirectResultRegister === undefined) {
-        // indirect return value is just another parameter
-        params.unshift(returnAlloc);
-    } else {
-        trampoline = makeCallTrampoline(dump, false, null, returnAlloc);
-        dump = new NativeFunction(trampoline.callAddr, 'void', ['pointer', 'pointer', 'pointer', 'pointer', 'pointer', 'int', 'pointer', 'pointer', 'pointer', 'pointer', 'pointer', 'pointer']);
-    }
-
-    dump.apply(null, params);
-
-    // Destroy the return value (a copy of the existential container for the dumped value).
-    __swift_destroy_boxed_opaque_existential_0(returnAlloc);
-
-    let encoding = Memory.readPointer(api._T0SS10FoundationE8EncodingV4utf8ACfau());
-
-    let witnessTableStringProtocol = api._T0SSs14StringProtocolsWP;
-    let listener;
-    let toCStringPtr = Module.findExportByName("libswiftFoundation.dylib", "_T0s14StringProtocolP10FoundationsAARzSS5IndexVADRtzlE01cA0Says4Int8VGSgSSACE8EncodingV5using_tF");
-    trampoline = makeCallTrampoline(toCStringPtr, false, stringResult, null);
-    let toCString = new NativeFunction(trampoline.callAddr, 'pointer', ['pointer', 'pointer', 'pointer']);
-
-    let array = toCString(encoding, SwiftString.canonicalType._ptr, witnessTableStringProtocol);
-
-    // the `BridgeObject` this `[CChar]?` contains somewhere deep down is Opaque, so we can't use type
-    // metadata to find this offset
-    let str = Memory.readUtf8String(array.add(8 + 3 * Process.pointerSize));
-
-    api.swift_unknownObjectRelease(Memory.readPointer(stringResult.add(2*Process.pointerSize)));
-    api.swift_bridgeObjectRelease(array);
-
-    return str;
+    // let type = obj.$type;
+    // let pointer = obj.$pointer;
+    // /*
+    //  * built by disassembling the code for this snippet:
+    //  *
+    //     var str = String()
+    //     dump(x, to: &str)
+    //     let arr : [CChar] = str.cString(using: String.Encoding.utf8)!
+    //     let ptr = UnsafePointer<CChar>(arr)
+    //     strlen(ptr)
+    //  */
+    // function __swift_destroy_boxed_opaque_existential_0(pointer) {
+    //     let opaque = new metadata.OpaqueExistentialContainer(pointer);
+    //     let type = opaque.type;
+    //     let vwt = opaque.type.valueWitnessTable;
+    //     if (vwt.flags.IsNonInline) {
+    //         let _swift_release_ = new NativeFunction(Memory.readPointer(api._swift_release), 'void', ['pointer']);
+    //         _swift_release_(opaque.fixedSizeBuffer0);
+    //     } else {
+    //         vwt.destroy(pointer, type._ptr);
+    //     }
+    // }
+    //
+    // let nomSwiftString = new metadata.TargetNominalTypeDescriptor(api._T0SSMn);
+    // let SwiftString = new types.Type(nomSwiftString, null, "Swift.String");
+    // if (!SwiftString.canonicalType)
+    //     SwiftString = SwiftString.withGenericParams();
+    //
+    // let dynamicType;
+    //
+    // let copy = Memory.alloc(4 * Process.pointerSize);
+    // let copyFn;
+    // let vwt = type.canonicalType.valueWitnessTable;
+    // if (type.kind === "Existential" && type.canonicalType.getRepresentation() === "Opaque") {
+    //     dynamicType = api.swift_getDynamicType(pointer, type.canonicalType._ptr, 1);
+    //     copyFn = vwt.initializeBufferWithCopyOfBuffer;
+    // } else {
+    //     dynamicType = type.canonicalType._ptr;
+    //     copyFn = vwt.initializeBufferWithCopy;
+    // }
+    // copyFn.call(vwt, copy, pointer, dynamicType);
+    // Memory.writePointer(copy.add(3 * Process.pointerSize), dynamicType);
+    //
+    // let stringResult = Memory.alloc(Process.pointerSize * 3);
+    // Memory.writePointer(stringResult, api._T0s19_emptyStringStorages6UInt32Vv);
+    // Memory.writePointer(stringResult.add(Process.pointerSize), ptr(0));
+    // Memory.writePointer(stringResult.add(2*Process.pointerSize), ptr(0));
+    //
+    // let threadId = Process.getCurrentThreadId();
+    //
+    // let textOutputStreamWitnessTableForString = api._T0SSs16TextOutputStreamsWP;
+    // let Any = api.swift_getExistentialTypeMetadata(metadata.ProtocolClassConstraint.Any, ptr(0), 0, ptr(0));
+    //
+    // let dump = api.$ss4dump_2to4name6indent8maxDepth0E5Itemsxx_q_zSSSgS3its16TextOutputStreamR_r0_lF;
+    //
+    // const LONG_MAX = ptr(0).not().shr(1);
+    //
+    // let returnAlloc = Memory.alloc(4 * Process.pointerSize);
+    // // TODO: default arguments should in theory be retrieved via generator functions
+    // let params = [
+    //     /*value*/ copy,
+    //     /*to*/ stringResult,
+    //     /*name*/ ptr(0), ptr(0), ptr(0), 1, // nil
+    //     /*indent*/ ptr(0),
+    //     /*maxDepth*/ LONG_MAX,
+    //     /*maxItems*/ LONG_MAX,
+    //     /*static type of `value`*/ Any,
+    //     /*static type of `to`*/ SwiftString.canonicalType._ptr,
+    //     /*how to use `to` as a TextOutputStream*/ textOutputStreamWitnessTableForString
+    // ];
+    // let trampoline;
+    // if (CC.indirectResultRegister === undefined) {
+    //     // indirect return value is just another parameter
+    //     params.unshift(returnAlloc);
+    // } else {
+    //     trampoline = makeCallTrampoline(dump, false, null, returnAlloc);
+    //     dump = new NativeFunction(trampoline.callAddr, 'void', ['pointer', 'pointer', 'pointer', 'pointer', 'pointer', 'int', 'pointer', 'pointer', 'pointer', 'pointer', 'pointer', 'pointer']);
+    // }
+    //
+    // dump.apply(null, params);
+    //
+    // // Destroy the return value (a copy of the existential container for the dumped value).
+    // __swift_destroy_boxed_opaque_existential_0(returnAlloc);
+    //
+    // let encoding = Memory.readPointer(api._T0SS10FoundationE8EncodingV4utf8ACfau());
+    //
+    // let witnessTableStringProtocol = api._T0SSs14StringProtocolsWP;
+    // let listener;
+    // let toCStringPtr = Module.findExportByName("libswiftFoundation.dylib", "_T0s14StringProtocolP10FoundationsAARzSS5IndexVADRtzlE01cA0Says4Int8VGSgSSACE8EncodingV5using_tF");
+    // trampoline = makeCallTrampoline(toCStringPtr, false, stringResult, null);
+    // let toCString = new NativeFunction(trampoline.callAddr, 'pointer', ['pointer', 'pointer', 'pointer']);
+    //
+    // let array = toCString(encoding, SwiftString.canonicalType._ptr, witnessTableStringProtocol);
+    //
+    // // the `BridgeObject` this `[CChar]?` contains somewhere deep down is Opaque, so we can't use type
+    // // metadata to find this offset
+    // let str = Memory.readUtf8String(array.add(8 + 3 * Process.pointerSize));
+    //
+    // api.swift_unknownObjectRelease(Memory.readPointer(stringResult.add(2*Process.pointerSize)));
+    // api.swift_bridgeObjectRelease(array);
+    //
+    // return str;
 }
 
 function isClassType(t) {

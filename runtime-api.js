@@ -53,11 +53,11 @@ module.exports = {
                 // see https://github.com/apple/swift/blob/master/docs/Runtime.md
                 module: "libswiftCore.dylib",
                 variables: new Set([
-                    "_T0SSs14StringProtocolsWP", // protocol witness table for Swift.String : Swift.StringProtocol in Swift
-                    "_T0SSs16TextOutputStreamsWP", // protocol witness table for Swift.String : Swift.TextOutputStream in Swift
-                    "_T0s19_emptyStringStorages6UInt32Vv", // Swift._emptyStringStorage
+                    //"_$sSSSysWP", // protocol witness table for Swift.String : Swift.StringProtocol in Swift
+                    "$sSSs16TextOutputStreamsWP", // protocol witness table for Swift.String : Swift.TextOutputStream in Swift
+                    // "_T0s19_emptyStringStorages6UInt32Vv", // Swift._emptyStringStorage
                     "_swift_release", // pointer to _swift_release_
-                    "_T0SSMn", // nominal type descriptor for Swift.String
+                    "$sSSMn", // nominal type descriptor for Swift.String
                 ]),
                 functions: {
                     "swift_demangle": ['pointer', ['pointer', size_t, 'pointer', 'pointer', 'int32']],
@@ -93,10 +93,11 @@ module.exports = {
                     'swift_dynamicCast': ['bool', ['pointer', 'pointer', 'pointer', 'pointer', size_t]],
                     "swift_getDynamicType": ['pointer', ['pointer', 'pointer', 'int8']],
 
-                    "swift_getTypeByName": ['pointer', ['pointer', size_t]],
+                    // TODO [Markus]: fix this
+                    //"swift_getTypeByName": ['pointer', ['pointer', size_t]],
                     "swift_getTypeName": [['pointer', 'pointer'],  ['pointer', 'uchar']],
 
-                    "_T0s4dumpxx_q_z2toSSSg4nameSi6indentSi8maxDepthSi0E5Itemsts16TextOutputStreamR_r0_lF": CC.indirectResultRegister === undefined ?
+                    "$ss4dump_2to4name6indent8maxDepth0E5Itemsxx_q_zSSSgS3its16TextOutputStreamR_r0_lF": CC.indirectResultRegister === undefined ?
                         // no special indirect result register: one more param for indirect result
                         ['void', ['pointer', 'pointer', 'pointer', 'pointer', 'pointer', 'pointer', 'int', 'pointer', 'pointer', 'pointer', 'pointer', 'pointer', 'pointer']] :
                         // indirect result register must be set by hook
@@ -135,6 +136,8 @@ module.exports = {
 
             variables.forEach(function (name) {
                 const exp = exportByName[name];
+                console.log("Initializing low level API variable " + name);
+                console.log(exp);
                 if (exp !== undefined && exp.type === 'variable') {
                     temporaryApi[name] = exp.address;
                 } else if(!(name in optionals)) {

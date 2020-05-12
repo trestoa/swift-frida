@@ -624,8 +624,8 @@ function findAllTypes(library) {
     let sizeAlloc = Memory.alloc(8);
     const __TEXT = Memory.allocUtf8String("__TEXT");
 
-    const sectionNames = [Memory.allocUtf8String("__swift_types"), Memory.allocUtf8String("__swift_proto")];
-    const recordSizes = [8, 16];
+    const sectionNames = [Memory.allocUtf8String("__swift5_types"), Memory.allocUtf8String("__swift5_proto")];
+    const recordSizes = [4, 16];
 
     function getTypePrio(t) {
         if (t.canonicalType)
@@ -661,11 +661,14 @@ function findAllTypes(library) {
             continue;
         enumeratedLibs.add(mod.name);
 
+        console.log(`module ${mod.name}`);
         for (let section = 0; section < sectionNames.length; section++) {
             // we don't have to use the name _mh_execute_header to refer to the mach-o header -- it's the module header
             let pointer = runtime.api.getsectiondata(mod.base, __TEXT, sectionNames[section], sizeAlloc);
-            if (pointer.isNull())
+            if (pointer.isNull()) {
+                console.error(`section ${Memory.readUtf8String(sectionNames[section])} not found`)
                 continue;
+            }
 
             let sectionSize = Memory.readULong(sizeAlloc);
             for (let i = 0; i < sectionSize; i += recordSizes[section]) {
@@ -679,8 +682,10 @@ function findAllTypes(library) {
                     addType(proto);
                 }
                 let nominalType = null;
-                if (record.getTypeKind() === metadata.TypeMetadataRecordKind.UniqueNominalTypeDescriptor)
+                if (record.getTypeKind() === metadata.TypeMetadataRecordKind.DirectTypeDescriptor)
                     nominalType = record.getNominalTypeDescriptor();
+                console.log(`${nominalType} ${nominalType.getKind()}`);
+                continue;
 
                 let canonicalType = record.getCanonicalTypeMetadata(runtime.api);
 
@@ -691,6 +696,8 @@ function findAllTypes(library) {
                 }
             }
         }
+
+        return;
 
         // TODO: it kind of sucks that we rely on symbol information here.
         // we should see if there is some other way to find the nominal types for generic data types
@@ -703,15 +710,15 @@ function findAllTypes(library) {
                 let demangled = mangling.demangle(exp.name);
                 //console.log('unmangled: ' + demangled);
                 let name = demangled.substr(METADATA_PREFIX.length);
-                //console.log(name);
                 // TODO [Markus]: fix this
                 if (demangled.startsWith(METADATA_PREFIX)) {
+                    console.log(demangled);
 
                     // first try to get the canonical type descriptor through the runtime API
                     // (this only works for class types)
                     //let nameCstr = Memory.allocUtf8String(name);
                     //let canon = runtime.api.swift_getTypeByName(nameCstr, strlen(nameCstr));
-                    if (false) {//(canon.isNull()) {
+                    if (true) {//(canon.isNull()) {
                         // type metadata sometimes can have members at negative indices, so we need to
                         // iterate until we find something that looks like the beginning of a Metadata object
                         // (Sadly, that doesn't work for class metadata with ISA pointers, but it should be no
@@ -724,18 +731,23 @@ function findAllTypes(library) {
                             }
                         }
                     }
-                    const val = Memory.readPointer(exp.address);
+
+                    let val = Memory.readPointer(exp.address);
+                    // Clear metadata kind flags
+                    val = val.toInt32() & 0xF;
+
                     let [pointer, len] = runtime.api.swift_getTypeName(exp.address, 1);
                     try {
                         const str = Memory.readUtf8String(pointer, len.toInt32());
 
-                        console.log(str);
-                        console.log(val.toString());
-                    } catch (_) {
+                        console.log(`Found type '${str}' at ${val.toString()} of type ${metadata.MetadataKind[val.toString()]}\n`);
+                    } catch (e) {
+                        console.error(e);
                     }
 
+
                     //if (!canon.isNull())
-                        addType(new Type(null, new metadata.TargetMetadata(exp.address), name));
+                    //    addType(new Type(null, new metadata.TargetMetadata(exp.address), name));
 
 
                 } else if (demangled.startsWith(NOMINAL_PREFIX)) {

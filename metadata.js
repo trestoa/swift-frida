@@ -459,12 +459,10 @@ const FieldTypeFlags = {
 
 
 const TypeMetadataRecordKind = {
-    Universal: 0,
-    UniqueDirectType: 1,
-    NonuniqueDirectType: 2,
-    UniqueIndirectClass : 3,
-    UniqueNominalTypeDescriptor: 4,
-    UniqueDirectClass: 0xF,
+    DirectTypeDescriptor: 0,
+    IndirectTypeDescriptor: 1,
+    DirectObjCClassName: 2,
+    IndirectObjCClass: 3,
 };
 
 function FlaggedPointer(type, bitPos) {
@@ -488,11 +486,17 @@ function RelativeDirectPointerIntPair(ptr) {
         intVal: val & 0x3,
     };
 }
+
+// From ContextDescriptorKind
 const NominalTypeKind = {
-    "0": "Class",
-    "1": "Struct",
-    "2": "Enum",
-    "3": "Optional",
+    "0": "Module",
+    "1": "Extension",
+    "2": "Anonymous",
+    "3": "Protocol",
+    "4": "OpaqueType",
+    "16": "Class",
+    "17": "Struct",
+    "18": "Enum",
 };
 
 const MetadataKind = {
@@ -1299,7 +1303,7 @@ function TargetNominalTypeDescriptor(ptr) {
 TargetNominalTypeDescriptor.prototype = {
     // offset 0
     get mangledName() {
-        let addr = TargetRelativeDirectPointerRuntime(this._ptr, true);
+        let addr = TargetRelativeDirectPointerRuntime(this._ptr.add(8), true);
         return mangling.MANGLING_PREFIX + "0" + Memory.readUtf8String(addr);
     },
     // offset 4
@@ -1398,7 +1402,10 @@ TargetNominalTypeDescriptor.prototype = {
     },
 
     getKind() {
-        return NominalTypeKind[this.genericMetadataPatternAndKind.intVal];
+        //0x1F === 31
+        let val = Memory.readU32(this._ptr) & 31;
+        console.log(val);
+        return NominalTypeKind[val];
     },
 
     // offset 28
@@ -1468,12 +1475,13 @@ TargetTypeMetadataRecord.prototype = {
     },
 
     get _flags() {
-        return Memory.readUInt(this._record.add(4));
+        return Memory.readU32(this._record);
     },
 
     getTypeKind() {
-        const TypeKindMask = 0x0000000F;
+        const TypeKindMask = 0x00000003;
         const TypeKindShift = 0;
+        console.log(this._flags & TypeKindMask)
         return (this._flags & TypeKindMask) >>> TypeKindShift; // see TypeMetadataRecordKind
     },
 
@@ -1500,17 +1508,8 @@ TargetTypeMetadataRecord.prototype = {
 
     getNominalTypeDescriptor() {
         switch (this.getTypeKind()) {
-            case TypeMetadataRecordKind.Universal:
-                return null;
-
-            case TypeMetadataRecordKind.UniqueNominalTypeDescriptor:
+            case TypeMetadataRecordKind.DirectTypeDescriptor:
                 break;
-
-            case TypeMetadataRecordKind.UniqueDirectClass:
-            case TypeMetadataRecordKind.UniqueIndirectClass:
-            case TypeMetadataRecordKind.UniqueDirectType:
-            case TypeMetadataRecordKind.NonuniqueDirectType:
-                throw new Error("not generic metadata pattern");
 
             default:
                 throw new Error("invalid type kind");

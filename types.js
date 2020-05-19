@@ -624,7 +624,7 @@ function findAllTypes(library) {
     let sizeAlloc = Memory.alloc(8);
     const __TEXT = Memory.allocUtf8String("__TEXT");
 
-    const sectionNames = [Memory.allocUtf8String("__swift5_types"), Memory.allocUtf8String("__swift5_proto")];
+    const sectionNames = [Memory.allocUtf8String("__swift5_types")]; //, Memory.allocUtf8String("__swift5_proto")];
     const recordSizes = [4, 16];
 
     function getTypePrio(t) {

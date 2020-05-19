@@ -388,7 +388,7 @@ TargetProtocolConformanceRecord.prototype = {
                 throw new Error("not generic metadata pattern");
         }
 
-        return new TargetNominalTypeDescriptor(this.typeDescriptor);
+        return new TargetContextDescriptor(this.typeDescriptor);
     },
 
     /// Get the directly-referenced static witness table.
@@ -738,7 +738,7 @@ TargetClassMetadata.prototype = Object.create(TargetMetadata.prototype, {
     getNominalTypeDescriptor: {
         value() {
             if (this.isTypeMetadata() && !this.isArtificialSubclass())
-                return new TargetNominalTypeDescriptor(this.getDescription());
+                return new TargetContextDescriptor(this.getDescription());
             else
                 return null;
         },
@@ -796,7 +796,7 @@ TargetValueMetadata.prototype = Object.create(TargetMetadata.prototype, {
         value() {
             if (this.description.isNull())
                 return null;
-            return new TargetNominalTypeDescriptor(this.description);
+            return new TargetContextDescriptor(this.description);
         },
         enumerable: true,
     },
@@ -1297,10 +1297,10 @@ const GenericParameterDescriptorFlags = {
     HasParent: 1,
     HasGenericParent: 2,
 };
-function TargetNominalTypeDescriptor(ptr) {
+function TargetContextDescriptor(ptr) {
     this._ptr = ptr;
 }
-TargetNominalTypeDescriptor.prototype = {
+TargetContextDescriptor.prototype = {
     // offset 0
     get mangledName() {
         let addr = TargetRelativeDirectPointerRuntime(this._ptr.add(8), true);
@@ -1404,7 +1404,6 @@ TargetNominalTypeDescriptor.prototype = {
     getKind() {
         //0x1F === 31
         let val = Memory.readU32(this._ptr) & 31;
-        console.log(val);
         return NominalTypeKind[val];
     },
 
@@ -1481,7 +1480,6 @@ TargetTypeMetadataRecord.prototype = {
     getTypeKind() {
         const TypeKindMask = 0x00000003;
         const TypeKindShift = 0;
-        console.log(this._flags & TypeKindMask)
         return (this._flags & TypeKindMask) >>> TypeKindShift; // see TypeMetadataRecordKind
     },
 
@@ -1515,7 +1513,7 @@ TargetTypeMetadataRecord.prototype = {
                 throw new Error("invalid type kind");
         }
 
-        return new TargetNominalTypeDescriptor(this._typeDescriptor);
+        return new TargetContextDescriptor(this._typeDescriptor);
     },
 
     getCanonicalTypeMetadata(api) { // returns a Metadata* for non-generic types
@@ -1613,7 +1611,7 @@ module.exports = {
     TargetClassMetadata,
     TargetProtocolConformanceRecord,
     TargetTypeMetadataRecord,
-    TargetNominalTypeDescriptor,
+    TargetNominalTypeDescriptor: TargetContextDescriptor,
     TargetFunctionTypeFlags,
     NominalTypeKind,
     TypeMetadataRecordKind: TypeReferenceKind,

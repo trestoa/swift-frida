@@ -327,15 +327,15 @@ TargetProtocolConformanceRecord.prototype = {
 
     getDirectType() {
         switch(this.getTypeKind()) {
-            case TypeMetadataRecordKind.Universal:
+            case TypeReferenceKind.Universal:
                 return null;
-            case TypeMetadataRecordKind.UniqueDirectType:
-            case TypeMetadataRecordKind.NonuniqueDirectType:
+            case TypeReferenceKind.UniqueDirectType:
+            case TypeReferenceKind.NonuniqueDirectType:
               break;
 
-            case TypeMetadataRecordKind.UniqueDirectClass:
-            case TypeMetadataRecordKind.UniqueIndirectClass:
-            case TypeMetadataRecordKind.UniqueNominalTypeDescriptor:
+            case TypeReferenceKind.UniqueDirectClass:
+            case TypeReferenceKind.UniqueIndirectClass:
+            case TypeReferenceKind.UniqueNominalTypeDescriptor:
               throw new Error("not direct type metadata");
         }
         return new TargetMetadata(this.directType);
@@ -343,15 +343,15 @@ TargetProtocolConformanceRecord.prototype = {
 
     getDirectClass() {
         switch(this.getTypeKind()) {
-            case TypeMetadataRecordKind.Universal:
+            case TypeReferenceKind.Universal:
                 return null;
-            case TypeMetadataRecordKind.UniqueDirectClass:
+            case TypeReferenceKind.UniqueDirectClass:
                 break;
 
-            case TypeMetadataRecordKind.UniqueDirectType:
-            case TypeMetadataRecordKind.NonuniqueDirectType:
-            case TypeMetadataRecordKind.UniqueNominalTypeDescriptor:
-            case TypeMetadataRecordKind.UniqueIndirectClass:
+            case TypeReferenceKind.UniqueDirectType:
+            case TypeReferenceKind.NonuniqueDirectType:
+            case TypeReferenceKind.UniqueNominalTypeDescriptor:
+            case TypeReferenceKind.UniqueIndirectClass:
               throw new Error("not direct class object");
         }
         return this.directType;
@@ -359,15 +359,15 @@ TargetProtocolConformanceRecord.prototype = {
 
     getIndirectClass() {
         switch(this.getTypeKind()) {
-            case TypeMetadataRecordKind.Universal:
+            case TypeReferenceKind.Universal:
                 return null;
-            case TypeMetadataRecordKind.UniqueIndirectClass:
+            case TypeReferenceKind.UniqueIndirectClass:
               break;
 
-            case TypeMetadataRecordKind.UniqueDirectType:
-            case TypeMetadataRecordKind.UniqueDirectClass:
-            case TypeMetadataRecordKind.NonuniqueDirectType:
-            case TypeMetadataRecordKind.UniqueNominalTypeDescriptor:
+            case TypeReferenceKind.UniqueDirectType:
+            case TypeReferenceKind.UniqueDirectClass:
+            case TypeReferenceKind.NonuniqueDirectType:
+            case TypeReferenceKind.UniqueNominalTypeDescriptor:
               throw new Error("not indirect class object");
         }
         return this.indirectClass;
@@ -375,16 +375,16 @@ TargetProtocolConformanceRecord.prototype = {
 
     getNominalTypeDescriptor() {
         switch (this.getTypeKind()) {
-            case TypeMetadataRecordKind.Universal:
+            case TypeReferenceKind.Universal:
                 return null;
 
-            case TypeMetadataRecordKind.UniqueNominalTypeDescriptor:
+            case TypeReferenceKind.UniqueNominalTypeDescriptor:
                 break;
 
-            case TypeMetadataRecordKind.UniqueDirectClass:
-            case TypeMetadataRecordKind.UniqueIndirectClass:
-            case TypeMetadataRecordKind.UniqueDirectType:
-            case TypeMetadataRecordKind.NonuniqueDirectType:
+            case TypeReferenceKind.UniqueDirectClass:
+            case TypeReferenceKind.UniqueIndirectClass:
+            case TypeReferenceKind.UniqueDirectType:
+            case TypeReferenceKind.NonuniqueDirectType:
                 throw new Error("not generic metadata pattern");
         }
 
@@ -417,18 +417,18 @@ TargetProtocolConformanceRecord.prototype = {
     getCanonicalTypeMetadata(api) {
         let classMetadata = null;
         switch (this.getTypeKind()) {
-            case TypeMetadataRecordKind.UniqueDirectType:
+            case TypeReferenceKind.UniqueDirectType:
                 return this.getDirectType();
-            case TypeMetadataRecordKind.NonuniqueDirectType:
+            case TypeReferenceKind.NonuniqueDirectType:
                 return new TargetMetadata(api.swift_getForeignTypeMetadata(this.getDirectType()._ptr));
-            case TypeMetadataRecordKind.UniqueIndirectClass:
+            case TypeReferenceKind.UniqueIndirectClass:
                 classMetadata = Memory.readPointer(this.getIndirectClass());
                 break;
-            case TypeMetadataRecordKind.UniqueDirectClass:
+            case TypeReferenceKind.UniqueDirectClass:
                 classMetadata = this.getDirectClass();
                 break;
-            case TypeMetadataRecordKind.UniqueNominalTypeDescriptor:
-            case TypeMetadataRecordKind.Universal:
+            case TypeReferenceKind.UniqueNominalTypeDescriptor:
+            case TypeReferenceKind.Universal:
                 return null;
         }
         if (classMetadata !== null && !classMetadata.isNull())
@@ -458,7 +458,7 @@ const FieldTypeFlags = {
 };
 
 
-const TypeMetadataRecordKind = {
+const TypeReferenceKind = {
     DirectTypeDescriptor: 0,
     IndirectTypeDescriptor: 1,
     DirectObjCClassName: 2,
@@ -1487,16 +1487,16 @@ TargetTypeMetadataRecord.prototype = {
 
     getDirectType() {
         switch(this.getTypeKind()) {
-            case TypeMetadataRecordKind.Universal:
+            case TypeReferenceKind.Universal:
                 return null;
 
-            case TypeMetadataRecordKind.UniqueDirectType:
-            case TypeMetadataRecordKind.NonuniqueDirectType:
-            case TypeMetadataRecordKind.UniqueDirectClass:
+            case TypeReferenceKind.UniqueDirectType:
+            case TypeReferenceKind.NonuniqueDirectType:
+            case TypeReferenceKind.UniqueDirectClass:
                 break;
 
-            case TypeMetadataRecordKind.UniqueIndirectClass:
-            case TypeMetadataRecordKind.UniqueNominalTypeDescriptor:
+            case TypeReferenceKind.UniqueIndirectClass:
+            case TypeReferenceKind.UniqueNominalTypeDescriptor:
                 throw new Error("not direct type metadata");
 
             default:
@@ -1508,7 +1508,7 @@ TargetTypeMetadataRecord.prototype = {
 
     getNominalTypeDescriptor() {
         switch (this.getTypeKind()) {
-            case TypeMetadataRecordKind.DirectTypeDescriptor:
+            case TypeReferenceKind.DirectTypeDescriptor:
                 break;
 
             default:
@@ -1521,13 +1521,13 @@ TargetTypeMetadataRecord.prototype = {
     getCanonicalTypeMetadata(api) { // returns a Metadata* for non-generic types
         let res = null;
         switch (this.getTypeKind()) {
-            case TypeMetadataRecordKind.UniqueDirectType:
+            case TypeReferenceKind.UniqueDirectType:
                 res = this.getDirectType();
                 break;
-            case TypeMetadataRecordKind.NonuniqueDirectType:
+            case TypeReferenceKind.NonuniqueDirectType:
                 res = api.swift_getForeignTypeMetadata(this.getDirectType());
                 break;
-            case TypeMetadataRecordKind.UniqueDirectClass:
+            case TypeReferenceKind.UniqueDirectClass:
                 let directType = this.getDirectType();
                 if (directType) {
                     res = api.swift_getObjCClassMetadata(directType);
@@ -1616,7 +1616,7 @@ module.exports = {
     TargetNominalTypeDescriptor,
     TargetFunctionTypeFlags,
     NominalTypeKind,
-    TypeMetadataRecordKind,
+    TypeMetadataRecordKind: TypeReferenceKind,
     FieldTypeFlags,
     FunctionMetadataConvention,
     FunctionConventionStrings,

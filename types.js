@@ -683,8 +683,19 @@ function findAllTypes(library) {
                 }
                 let nominalType = null;
                 if (record.getTypeKind() === metadata.TypeMetadataRecordKind.DirectTypeDescriptor)
-                    nominalType = record.getNominalTypeDescriptor();
-                console.log(`${nominalType} ${nominalType.getKind()}`);
+                    nominalType = record.getContextDescriptor();
+
+                const typeDescriptor = nominalType.typeContextDescriptor
+                let numFields = 0;
+                try {
+                    const fields = typeDescriptor.getFields();
+                    numFields = fields.numFields
+                    console.log(`${nominalType.kind} ${typeDescriptor.name} ${numFields}`);
+                    fields.readFields();
+                } catch (e) {
+                    console.error(e);
+                }
+
                 continue;
 
                 let canonicalType = record.getCanonicalTypeMetadata(runtime.api);

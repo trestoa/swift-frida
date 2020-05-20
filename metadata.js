@@ -2,6 +2,8 @@
 
 /* jshint esnext: true, evil: true */
 
+import {FieldDescriptor} from "./reflection";
+
 const mangling = require('./mangling');
 
 // for all these definitions, look at include/swift/Runtime/Metadata.h and friends in the Swift sources
@@ -388,7 +390,7 @@ TargetProtocolConformanceRecord.prototype = {
                 throw new Error("not generic metadata pattern");
         }
 
-        return new TargetContextDescriptor(this.typeDescriptor);
+        return new _TargetContextDescriptor(this.typeDescriptor);
     },
 
     /// Get the directly-referenced static witness table.
@@ -738,7 +740,7 @@ TargetClassMetadata.prototype = Object.create(TargetMetadata.prototype, {
     getNominalTypeDescriptor: {
         value() {
             if (this.isTypeMetadata() && !this.isArtificialSubclass())
-                return new TargetContextDescriptor(this.getDescription());
+                return new _TargetContextDescriptor(this.getDescription());
             else
                 return null;
         },
@@ -796,7 +798,7 @@ TargetValueMetadata.prototype = Object.create(TargetMetadata.prototype, {
         value() {
             if (this.description.isNull())
                 return null;
-            return new TargetContextDescriptor(this.description);
+            return new _TargetContextDescriptor(this.description);
         },
         enumerable: true,
     },
@@ -1297,10 +1299,124 @@ const GenericParameterDescriptorFlags = {
     HasParent: 1,
     HasGenericParent: 2,
 };
-function TargetContextDescriptor(ptr) {
+
+class TargetContextDescriptor {
+    static size = 8;
+
+    constructor(ptr) {
+        this.ptr = ptr;
+    }
+
+    get flags() {
+        return this.ptr.readU32();
+    }
+
+    get kind() {
+        let val = this.flags & 31;
+        return NominalTypeKind[val];
+    }
+
+    get typeContextDescriptor() {
+        return new TargetTypeContextDescriptor(this.ptr.add(TargetContextDescriptor.size), this);
+    }
+}
+
+class TargetTypeContextDescriptor {
+    static size = 12;
+
+    static offsets = {
+        'Name': 0,
+        'AccessFunction': 4,
+        'Fields': 8
+    }
+
+    constructor(ptr, contextDescriptor) {
+        this.ptr = ptr;
+        this.contextDescriptor = contextDescriptor;
+    }
+
+    get name() {
+        let addr = TargetRelativeDirectPointerRuntime(this.ptr, true);
+        return Memory.readUtf8String(addr);
+    }
+
+    get classDescriptor() {
+        return new TargetClassDescriptor(this.ptr.add(TargetTypeContextDescriptor.size), this)
+    }
+
+    get metadata() {
+
+    }
+
+    getFields() {
+        return new FieldDescriptor(
+            TargetRelativeDirectPointerRuntime(this.ptr.add(TargetTypeContextDescriptor.offsets.Fields), true)
+        )
+    }
+}
+
+class TargetClassDescriptor {
+    static size = 6 * 4;
+
+    static offsets = {
+        'SuperclassType': 0,
+        'MetadataNegativeSizeInWords': 4,
+        'MetadataPositiveSizeInWords': 8,
+        'NumImmediateMembers': 12,
+        'NumFields': 16,
+        'FieldOffsetVectorOffset': 20,
+    }
+
+    constructor(ptr, contextTypeDescriptor) {
+        this.ptr = ptr;
+        this.contextTypeDescriptor = contextTypeDescriptor;
+    }
+
+    get numFields() {
+        const addr = this.ptr.add(TargetClassDescriptor.offsets["NumFields"]);
+        return addr.readU32();
+    }
+}
+
+class TargetEnumDescriptor {
+    static size = 0;
+
+
+    static offsets = {
+        /*
+         * The number of non-empty cases in the enum are in the low 24 bits;
+         * the offset of the payload size in the metadata record in words,
+         * if any, is stored in the high 8 bits.
+         */
+        'NumPayloadCasesAndPayloadSizeOffset': 0,
+        'NumEmptyCases': 4,
+    }
+
+    constructor(ptr, contextTypeDescriptor) {
+        this.ptr = ptr;
+        this.contextTypeDescriptor = contextTypeDescriptor;
+    }
+
+    get _numPayloadCasesAndPayloadSizeOffset() {
+        return this.ptr
+            .add(TargetEnumDescriptor.offsets['NumPayloadCasesAndPayloadSizeOffset'])
+            .readU32();
+    }
+
+    get numPayloadCases() {
+        return this._numPayloadCasesAndPayloadSizeOffset & 0x00ffffff;
+    }
+
+    get numEmptyCases() {
+        return this.ptr.add(TargetEnumDescriptor.offsets['NumEmptyCases']).readU32();
+    }
+}
+
+
+function _TargetContextDescriptor(ptr) {
     this._ptr = ptr;
 }
-TargetContextDescriptor.prototype = {
+_TargetContextDescriptor.prototype = {
     // offset 0
     get mangledName() {
         let addr = TargetRelativeDirectPointerRuntime(this._ptr.add(8), true);
@@ -1504,7 +1620,7 @@ TargetTypeMetadataRecord.prototype = {
         return this._directType;
     },
 
-    getNominalTypeDescriptor() {
+    getContextDescriptor() {
         switch (this.getTypeKind()) {
             case TypeReferenceKind.DirectTypeDescriptor:
                 break;
@@ -1611,7 +1727,7 @@ module.exports = {
     TargetClassMetadata,
     TargetProtocolConformanceRecord,
     TargetTypeMetadataRecord,
-    TargetNominalTypeDescriptor: TargetContextDescriptor,
+    TargetNominalTypeDescriptor: _TargetContextDescriptor,
     TargetFunctionTypeFlags,
     NominalTypeKind,
     TypeMetadataRecordKind: TypeReferenceKind,
@@ -1623,4 +1739,5 @@ module.exports = {
     ClassExistentialContainer,
     ProtocolClassConstraint,
     TargetProtocolDescriptor,
+    TargetRelativeDirectPointerRuntime
 };
